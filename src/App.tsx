@@ -7,6 +7,8 @@ import { Session } from '@supabase/supabase-js'
 import { supabase } from './lib/supabase'
 import { SessionContext } from './context/SessionContext'
 import FundableOrgsList from './components/FundableOrgsList'
+import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import FundableOrgDetails from './components/FundableOrgDetails'
 
 function App() {
   const [count, setCount] = useState(0)
@@ -28,30 +30,35 @@ function App() {
 
   return (
     <SessionContext.Provider value={{ session, setSession }}>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
+      <BrowserRouter>
+        <div>
+          <a href="https://vite.dev" target="_blank">
+            <img src={viteLogo} className="logo" alt="Vite logo" />
+          </a>
+          <a href="https://react.dev" target="_blank">
+            <img src={reactLogo} className="logo react" alt="React logo" />
+          </a>
+        </div>
+        <h1>Vite + React</h1>
+        <div className="card">
+          <button onClick={() => setCount((count) => count + 1)}>
+            count is {count}
+          </button>
+          <p>
+            Edit <code>src/App.tsx</code> and save to test HMR
+          </p>
+        </div>
+        <p className="read-the-docs">
+          Click on the Vite and React logos to learn more
         </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-      <Login />
-      {session && (
-        <FundableOrgsList />
-      )}
+        <Login />
+        {session && (
+          <Routes>
+            <Route path="/" element={<FundableOrgsList />} />
+            <Route path="/fundableorgs/:orgId" element={<FundableOrgDetails />} />
+          </Routes>
+        )}
+      </BrowserRouter>
     </SessionContext.Provider>
   )
 }

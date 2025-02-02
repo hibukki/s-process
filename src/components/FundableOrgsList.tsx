@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import type { Tables } from '../../database.types'
+import { Link } from 'react-router-dom'
 
 export default function FundableOrgsList() {
   const [orgs, setOrgs] = useState<Tables<'fundable_orgs'>[]>([])
@@ -46,11 +47,16 @@ export default function FundableOrgsList() {
       ) : (
         <ul className="space-y-2">
           {orgs.map((org) => (
-            <li key={org.id} className="p-3 border rounded hover:bg-gray-50">
-              <p className="font-medium">{org.name}</p>
-              <p className="text-sm text-gray-500">
-                Added: {new Date(org.created_at!).toLocaleDateString()}
-              </p>
+            <li key={org.id}>
+              <Link
+                to={`/fundableorgs/${org.id}`}
+                className="block p-3 border rounded hover:bg-gray-50"
+              >
+                <p className="font-medium">{org.name}</p>
+                <p className="text-sm text-gray-500">
+                  Added: {new Date(org.created_at!).toLocaleDateString()}
+                </p>
+              </Link>
             </li>
           ))}
         </ul>
