@@ -13,10 +13,12 @@ export default function Login() {
   else {
     return (
       <div>
-        <div>Logged in!</div>
-        <button onClick={() => supabase.auth.signOut()}>
-          Sign Out
-        </button>
+        <div className="flex items-center gap-2">
+          <span>Logged in!</span>
+          <button onClick={() => supabase.auth.signOut()}>
+            Sign Out
+          </button>
+        </div>
       </div>
     )
   }
