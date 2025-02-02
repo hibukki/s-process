@@ -7,7 +7,20 @@
 [https://supabase.com/docs/guides/local-development](https://supabase.com/docs/guides/local-development)
 
 ### Initialize Supabase for local development
+
 Run `supabase init`, it will complain that things are missing, but explains what to do. [docs](https://supabase.com/docs/reference/cli/supabase-init)
+
+### Create migration
+
+```bash
+supabase migration new <migration name>
+```
+
+### Apply migrations
+
+```bash
+supabase db push
+```
 
 ## Original README from Vite template
 
