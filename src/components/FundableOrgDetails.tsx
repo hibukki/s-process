@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import type { Tables } from '../../database.types'
+import MarginalUtilityEditor from './MarginalUtilityEditor'
 
 export default function FundableOrgDetails() {
   const { orgId } = useParams()
@@ -56,6 +57,7 @@ export default function FundableOrgDetails() {
           Added: {new Date(org.created_at!).toLocaleDateString()}
         </p>
         {/* Add more organization details here as needed */}
+        <MarginalUtilityEditor />
       </div>
     </div>
   )
