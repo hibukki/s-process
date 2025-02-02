@@ -1,4 +1,15 @@
-# React + TypeScript + Vite
+# s-process
+
+## Supabase
+
+### Install Supabase CLI
+
+[https://supabase.com/docs/guides/local-development](https://supabase.com/docs/guides/local-development)
+
+### Initialize Supabase for local development
+Run `supabase init`, it will complain that things are missing, but explains what to do. [docs](https://supabase.com/docs/reference/cli/supabase-init)
+
+## Original README from Vite template
 
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
