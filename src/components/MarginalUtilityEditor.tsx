@@ -8,9 +8,16 @@ interface Point {
 
 const MarginalUtilityEditor = () => {
   // SVG viewport constants
-  const width = 300;
-  const height = 300;
+  const width = 400;
+  const height = 400;
   const padding = 40;
+
+  // Add text padding for labels
+  const textPadding = 10;
+
+  // Scale values
+  const maxDollars = 10000000; // $10M
+  const maxUtilons = 100;
 
   // Initial state: one point on y-axis, one on x-axis
   const [points, setPoints] = useState<Point[]>([
@@ -65,6 +72,7 @@ const MarginalUtilityEditor = () => {
 
   return (
     <div className="w-full max-w-lg mx-auto p-4">
+      <h2 className="text-xl font-bold text-center mb-4">Marginal Utility Editor</h2>
       <div className="mb-4 space-x-2">
         <button 
           onClick={addPoint}
@@ -107,6 +115,59 @@ const MarginalUtilityEditor = () => {
           stroke="black" 
           strokeWidth="2"
         />
+        
+        {/* X-axis label and values */}
+        <text
+          x={width / 2}
+          y={height - textPadding}
+          textAnchor="middle"
+          className="text-sm"
+        >
+          k dollars
+        </text>
+        <text
+          x={padding}
+          y={height - textPadding}
+          textAnchor="middle"
+          className="text-sm"
+        >
+          0
+        </text>
+        <text
+          x={width - padding}
+          y={height - textPadding}
+          textAnchor="middle"
+          className="text-sm"
+        >
+          $10M
+        </text>
+
+        {/* Y-axis label and values */}
+        <text
+          x={textPadding}
+          y={height / 2}
+          textAnchor="middle"
+          transform={`rotate(-90, ${textPadding}, ${height / 2})`}
+          className="text-sm"
+        >
+          utilons
+        </text>
+        <text
+          x={padding - textPadding}
+          y={height - padding}
+          textAnchor="end"
+          className="text-sm"
+        >
+          0
+        </text>
+        <text
+          x={padding - textPadding}
+          y={padding}
+          textAnchor="end"
+          className="text-sm"
+        >
+          100
+        </text>
         
         {/* Lines connecting points */}
         <path 
