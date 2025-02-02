@@ -1,6 +1,4 @@
 import { useState, useEffect } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
 import './App.css'
 import Login from './components/Login'
 import { Session } from '@supabase/supabase-js'
@@ -11,7 +9,6 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import FundableOrgDetails from './components/FundableOrgDetails'
 
 function App() {
-  const [count, setCount] = useState(0)
   const [session, setSession] = useState<Session | null>(null)
 
   useEffect(() => {
