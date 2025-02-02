@@ -12,7 +12,13 @@ Run `npx supabase link`, it will complain that things are missing, but explains 
 npx supabase migration new <migration name>
 ```
 
-### Apply migrations
+### Create types
+
+```bash
+npx supabase gen types typescript --project-id "$SUPABASE_PROJECT_ID" --schema public > database.types.ts
+```
+
+### Push migrations to Supabase
 
 ```bash
 npx supabase db push
