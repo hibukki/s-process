@@ -120,18 +120,26 @@ describe('getUtilityAtAmount', () => {
   test('calculates utility correctly with 3 points', () => {
     // Test exact points
     expect(getUtilityAtAmount(threePoints, 0)).toBe(100);
-    expect(getUtilityAtAmount(threePoints, 500000)).toBe(50);
-    expect(getUtilityAtAmount(threePoints, 1000000)).toBe(20);
+    expect(getUtilityAtAmount(threePoints, 500_000)).toBe(50);
+    expect(getUtilityAtAmount(threePoints, 1_000_000)).toBe(20);
 
     // Test interpolation between points
-    // At 250000 (halfway between 0 and 500000), should be 75 (halfway between 100 and 50)
-    expect(getUtilityAtAmount(threePoints, 250000)).toBe(75);
-    
-    // At 750000 (halfway between 500000 and 1000000), should be 35 (halfway between 50 and 20)
-    expect(getUtilityAtAmount(threePoints, 750000)).toBe(35);
+    // Half way: At 250000 (halfway between 0 and 500000), should be 75 (halfway between 100 and 50)
+    expect(getUtilityAtAmount(threePoints, 250_000)).toBe(75);
 
-    // Test beyond last point
-    expect(getUtilityAtAmount(threePoints, 1500000)).toBe(20);
+    // 20% between the 0 and 500k point:
+    expect(getUtilityAtAmount(threePoints, 100_000)).toBe(90);
+
+    // Exactly at each point
+    expect(getUtilityAtAmount(threePoints, 0)).toBe(100);
+    expect(getUtilityAtAmount(threePoints, 500_000)).toBe(50);
+    expect(getUtilityAtAmount(threePoints, 1_000_000)).toBe(20);
+
+    // Different curve: At 750000 (halfway between 500000 and 1000000), should be 35 (halfway between 50 and 20)
+    expect(getUtilityAtAmount(threePoints, 750_000)).toBe(35);
+
+    // Beyond last point
+    expect(getUtilityAtAmount(threePoints, 1_500_000)).toBe(20);
   });
 
   test('throws error for invalid inputs', () => {
