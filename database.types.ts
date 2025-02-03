@@ -27,6 +27,53 @@ export type Database = {
         }
         Relationships: []
       }
+      marginal_utility_estimates: {
+        Row: {
+          created_at: string | null
+          id: number
+        }
+        Insert: {
+          created_at?: string | null
+          id?: never
+        }
+        Update: {
+          created_at?: string | null
+          id?: never
+        }
+        Relationships: []
+      }
+      utility_graph_points: {
+        Row: {
+          created_at: string | null
+          id: number
+          marginal_utility_estimate_id: number
+          usd_amount: number
+          utilons: number
+        }
+        Insert: {
+          created_at?: string | null
+          id?: never
+          marginal_utility_estimate_id: number
+          usd_amount: number
+          utilons: number
+        }
+        Update: {
+          created_at?: string | null
+          id?: never
+          marginal_utility_estimate_id?: number
+          usd_amount?: number
+          utilons?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "utility_graph_points_marginal_utility_estimate_id_fkey"
+            columns: ["marginal_utility_estimate_id"]
+            isOneToOne: false
+            referencedRelation: "marginal_utility_estimates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
