@@ -206,7 +206,11 @@ const MarginalUtilityEditor = () => {
 
       {sortedPoints.map(point => (
         <div key={point.id}>
-          <p>Point {point.id}: usd=${Math.round((point.x / width) * maxDollars).toLocaleString()}, utilons={Math.round((point.y / height) * maxUtilons)}</p>
+          <p>
+            Point {point.id}: 
+            usd=${Math.round(((point.x - padding) / (width - padding)) * maxDollars).toLocaleString()}, 
+            utilons={Math.round(((height - point.y - padding) / (height - padding)) * maxUtilons)}
+          </p>
         </div>
       ))}
     </div>
