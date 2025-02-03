@@ -24,6 +24,10 @@ const MarginalUtilityEditor = ({
   onSave,
   mini = false,
 }: MarginalUtilityEditorProps) => {
+  if (mini && initialPoints.length === 0) {
+    return <div>[No marginal utility estimate]</div>;
+  }
+
   // SVG viewport constants
   const width = mini ? 200 : 400;
   const height = mini ? 120 : 400;
