@@ -85,9 +85,6 @@ export default function FundableOrgsList() {
                 className="block p-3 border rounded hover:bg-gray-50"
               >
                 <p className="font-medium">{org.name}</p>
-                <p className="text-sm text-gray-500">
-                  Added: {new Date(org.created_at!).toLocaleDateString()}
-                </p>
               </Link>
             </li>
           ))}
