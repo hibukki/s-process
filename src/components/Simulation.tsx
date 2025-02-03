@@ -17,32 +17,6 @@ export default function Simulation() {
   );
   const [orgs, setOrgs] = useState<Org[]>([]);
 
-  // Helper function:
-  // Given the piecewise linear "utility function" defined by utility graph points,
-  // return the estimated total utility at a given allocation amount.
-  function getUtilityAtAmount(
-    points: UtilityGraphPoint[],
-    usd_amount: number
-  ): number {
-    if (points.length === 0) return 0;
-    // Is the amount equal to one of the points?
-    const point = points.find((p) => p.usd_amount === usd_amount);
-    if (point) return point.utilons;
-
-    // Interpolate between graph points.
-    for (let i = 0; i < points.length - 1; i++) {
-      const p1 = points[i];
-      const p2 = points[i + 1];
-      if (usd_amount >= p1.usd_amount && usd_amount <= p2.usd_amount) {
-        const ratio =
-          (usd_amount - p1.usd_amount) / (p2.usd_amount - p1.usd_amount);
-        return p1.utilons + ratio * (p2.utilons - p1.utilons);
-      }
-    }
-    // If the amount exceeds the last point, assume the utility has plateaued.
-    return points[points.length - 1].utilons;
-  }
-
   useEffect(() => {
     async function runSimulation() {
       // Get orgs from Supabase.
