@@ -1,165 +1,167 @@
-import { useEffect, useState } from 'react'
-import { useParams, Link } from 'react-router-dom'
-import { supabase } from '../lib/supabase'
-import type { Tables } from '../../database.types'
-import MarginalUtilityEditor from './MarginalUtilityEditor'
-import type { UsdUtilonPoint } from './MarginalUtilityEditor'
+import { useEffect, useState } from "react";
+import { useParams, Link } from "react-router-dom";
+import { supabase } from "../lib/supabase";
+import type { Tables } from "../../database.types";
+import MarginalUtilityEditor from "./MarginalUtilityEditor";
+import type { UsdUtilonPoint } from "./MarginalUtilityEditor";
 
 export default function FundableOrgDetails() {
-  const { orgId } = useParams()
-  const [org, setOrg] = useState<Tables<'fundable_orgs'> | null>(null)
-  const [estimateId, setEstimateId] = useState<number | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-  const [points, setPoints] = useState<UsdUtilonPoint[]>([])
+  const { orgId } = useParams();
+  const [org, setOrg] = useState<Tables<"fundable_orgs"> | null>(null);
+  const [estimateId, setEstimateId] = useState<number | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [points, setPoints] = useState<UsdUtilonPoint[]>([]);
 
   useEffect(() => {
     async function fetchData() {
       try {
         // Fetch org details
         const { data: orgData, error: orgError } = await supabase
-          .from('fundable_orgs')
-          .select('*')
-          .eq('id', orgId)
-          .single()
+          .from("fundable_orgs")
+          .select("*")
+          .eq("id", orgId)
+          .single();
 
-        if (orgError) throw orgError
-        setOrg(orgData)
+        if (orgError) throw orgError;
+        setOrg(orgData);
 
         // Fetch estimate and its points for current user and org
-        const { data: user } = await supabase.auth.getUser()
-        if (!user.user) throw new Error('Not authenticated')
+        const { data: user } = await supabase.auth.getUser();
+        if (!user.user) throw new Error("Not authenticated");
 
         const { data: estimateData, error: estimateError } = await supabase
-          .from('marginal_utility_estimates')
-          .select(`
+          .from("marginal_utility_estimates")
+          .select(
+            `
             id,
             utility_graph_points (
               id,
               usd_amount,
               utilons
             )
-          `)
-          .eq('org_id', orgId)
-          .eq('estimator_id', user.user.id)
-          .single()
+          `
+          )
+          .eq("org_id", orgId)
+          .eq("estimator_id", user.user.id)
+          .single();
 
         if (estimateError) {
           // Handle "no rows returned" as a non-error case
-          if (estimateError.code === 'PGRST116') {
-            setEstimateId(null)
-            setPoints([])
-            return
+          if (estimateError.code === "PGRST116") {
+            setEstimateId(null);
+            setPoints([]);
+            return;
           }
-          throw estimateError
+          throw estimateError;
         }
 
-        setEstimateId(estimateData?.id ?? null)
+        setEstimateId(estimateData?.id ?? null);
         if (estimateData?.utility_graph_points) {
-          setPoints(estimateData.utility_graph_points)
+          setPoints(estimateData.utility_graph_points);
         }
       } catch (e) {
-        setError(e instanceof Error ? e.message : 'An error occurred')
+        setError(e instanceof Error ? e.message : "An error occurred");
       } finally {
-        setIsLoading(false)
+        setIsLoading(false);
       }
     }
 
-    fetchData()
+    fetchData();
 
     // Set up real-time subscription for points
     const channel = supabase
-      .channel('utility_graph_points_changes')
+      .channel("utility_graph_points_changes")
       .on(
-        'postgres_changes',
+        "postgres_changes",
         {
-          event: '*',
-          schema: 'public',
-          table: 'utility_graph_points',
+          event: "*",
+          schema: "public",
+          table: "utility_graph_points",
           filter: `marginal_utility_estimate_id=eq.${estimateId}`,
         },
         async () => {
           // Refetch all points when any change occurs
-          if (!estimateId) return
-          
+          if (!estimateId) return;
+
           const { data, error } = await supabase
-            .from('utility_graph_points')
-            .select('id, usd_amount, utilons')
-            .eq('marginal_utility_estimate_id', estimateId)
-          
+            .from("utility_graph_points")
+            .select("id, usd_amount, utilons")
+            .eq("marginal_utility_estimate_id", estimateId);
+
           if (!error && data) {
-            setPoints(data)
+            setPoints(data);
           }
         }
       )
-      .subscribe()
+      .subscribe();
 
     // Cleanup subscription on unmount
     return () => {
-      supabase.removeChannel(channel)
-    }
-  }, [orgId, estimateId])
+      supabase.removeChannel(channel);
+    };
+  }, [orgId, estimateId]);
 
   const handleCreateEstimate = async () => {
     try {
-      const { data: user } = await supabase.auth.getUser()
-      if (!user.user) throw new Error('Not authenticated')
+      const { data: user } = await supabase.auth.getUser();
+      if (!user.user) throw new Error("Not authenticated");
 
       const { data, error } = await supabase
-        .from('marginal_utility_estimates')
+        .from("marginal_utility_estimates")
         .insert({
           org_id: Number(orgId),
           estimator_id: user.user.id,
         })
-        .select('id')
-        .single()
+        .select("id")
+        .single();
 
-      if (error) throw error
-      setEstimateId(data.id)
+      if (error) throw error;
+      setEstimateId(data.id);
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed to create estimate')
+      setError(e instanceof Error ? e.message : "Failed to create estimate");
     }
-  }
+  };
 
   const handleSavePoints = async (newPoints: UsdUtilonPoint[]) => {
-    if (!estimateId) return
+    if (!estimateId) return;
 
     try {
       // Start a transaction using RPC if available, or just sequential operations
       const { error: deleteError } = await supabase
-        .from('utility_graph_points')
+        .from("utility_graph_points")
         .delete()
-        .eq('marginal_utility_estimate_id', estimateId)
+        .eq("marginal_utility_estimate_id", estimateId);
 
-      if (deleteError) throw deleteError
+      if (deleteError) throw deleteError;
 
       const { error: insertError } = await supabase
-        .from('utility_graph_points')
+        .from("utility_graph_points")
         .insert(
-          newPoints.map(point => ({
+          newPoints.map((point) => ({
             marginal_utility_estimate_id: estimateId,
             usd_amount: point.usd_amount,
-            utilons: point.utilons
+            utilons: point.utilons,
           }))
-        )
+        );
 
-      if (insertError) throw insertError
+      if (insertError) throw insertError;
       // No need to setPoints here as the subscription will handle it
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed to save points')
+      setError(e instanceof Error ? e.message : "Failed to save points");
     }
-  }
+  };
 
   if (isLoading) {
-    return <div>Loading organization details...</div>
+    return <div>Loading organization details...</div>;
   }
 
   if (error) {
-    return <div className="text-red-600">Error: {error}</div>
+    return <div className="text-red-600">Error: {error}</div>;
   }
 
   if (!org) {
-    return <div>Organization not found</div>
+    return <div>Organization not found</div>;
   }
 
   return (
@@ -173,7 +175,7 @@ export default function FundableOrgDetails() {
           Added: {new Date(org.created_at!).toLocaleDateString()}
         </p>
         {estimateId ? (
-          <MarginalUtilityEditor 
+          <MarginalUtilityEditor
             initialPoints={points}
             onSave={handleSavePoints}
           />
@@ -187,5 +189,5 @@ export default function FundableOrgDetails() {
         )}
       </div>
     </div>
-  )
-} 
+  );
+}

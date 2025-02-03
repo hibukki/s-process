@@ -1,79 +1,87 @@
-import { useEffect, useState } from 'react'
-import { supabase } from '../lib/supabase'
-import type { Tables } from '../../database.types'
-import { Link } from 'react-router-dom'
+import { useEffect, useState } from "react";
+import { supabase } from "../lib/supabase";
+import type { Tables } from "../../database.types";
+import { Link } from "react-router-dom";
 
 export default function FundableOrgsList() {
-  const [orgs, setOrgs] = useState<Tables<'fundable_orgs'>[]>([])
-  const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-  const [newOrgName, setNewOrgName] = useState('')
-  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [orgs, setOrgs] = useState<Tables<"fundable_orgs">[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [newOrgName, setNewOrgName] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     async function fetchOrgs() {
       try {
         const { data, error } = await supabase
-          .from('fundable_orgs')
-          .select('*')
-          .order('name')
+          .from("fundable_orgs")
+          .select("*")
+          .order("name");
 
         if (error) {
-          throw error
+          throw error;
         }
 
-        setOrgs(data)
+        setOrgs(data);
       } catch (e) {
-        setError(e instanceof Error ? e.message : 'An error occurred while fetching organizations')
+        setError(
+          e instanceof Error
+            ? e.message
+            : "An error occurred while fetching organizations"
+        );
       } finally {
-        setIsLoading(false)
+        setIsLoading(false);
       }
     }
 
-    fetchOrgs()
-  }, [])
+    fetchOrgs();
+  }, []);
 
   async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault()
-    if (!newOrgName.trim()) return
+    e.preventDefault();
+    if (!newOrgName.trim()) return;
 
-    setIsSubmitting(true)
+    setIsSubmitting(true);
     try {
       const { error } = await supabase
-        .from('fundable_orgs')
-        .insert([{ name: newOrgName.trim() }])
+        .from("fundable_orgs")
+        .insert([{ name: newOrgName.trim() }]);
 
-      if (error) throw error
+      if (error) throw error;
 
       // Refresh the list
       const { data, error: fetchError } = await supabase
-        .from('fundable_orgs')
-        .select('*')
-        .order('name')
-      
-      if (fetchError) throw fetchError
-      
-      setOrgs(data)
-      setNewOrgName('') // Clear the input
+        .from("fundable_orgs")
+        .select("*")
+        .order("name");
+
+      if (fetchError) throw fetchError;
+
+      setOrgs(data);
+      setNewOrgName(""); // Clear the input
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'An error occurred while adding the organization')
+      setError(
+        e instanceof Error
+          ? e.message
+          : "An error occurred while adding the organization"
+      );
     } finally {
-      setIsSubmitting(false)
+      setIsSubmitting(false);
     }
   }
 
   if (isLoading) {
-    return <div>Loading organizations...</div>
+    return <div>Loading organizations...</div>;
   }
 
   if (error) {
-    return <div className="text-red-600">Error: {error}</div>
+    return <div className="text-red-600">Error: {error}</div>;
   }
 
   return (
     <div className="p-4">
       <h1 className="text-2xl font-bold mb-4">Fundable Organizations</h1>
-      
+
       {orgs.length === 0 ? (
         <p>No organizations found.</p>
       ) : (
@@ -108,11 +116,11 @@ export default function FundableOrgsList() {
               disabled={isSubmitting || !newOrgName.trim()}
               className="w-full p-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:bg-gray-300 transition-colors duration-200"
             >
-              {isSubmitting ? 'Adding...' : 'Add Organization'}
+              {isSubmitting ? "Adding..." : "Add Organization"}
             </button>
           </div>
         </form>
       </div>
     </div>
-  )
+  );
 }
