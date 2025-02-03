@@ -1,4 +1,4 @@
-import { runAllocation, Organization, UtilityGraphPoint } from './simulationLogic';
+import { runAllocation, Organization, UtilityGraphPoint, getUtilityAtAmount } from './simulationLogic';
 import * as fs from 'fs';
 import * as path from 'path';
 
@@ -107,5 +107,36 @@ describe('runAllocation', () => {
         );
       }
     }
+  });
+});
+
+describe('getUtilityAtAmount', () => {
+  const threePoints: UtilityGraphPoint[] = [
+    { usd_amount: 0, utilons: 100, marginal_utility_estimate_id: 1 },
+    { usd_amount: 500000, utilons: 50, marginal_utility_estimate_id: 1 },
+    { usd_amount: 1000000, utilons: 20, marginal_utility_estimate_id: 1 }
+  ];
+
+  test('calculates utility correctly with 3 points', () => {
+    // Test exact points
+    expect(getUtilityAtAmount(threePoints, 0)).toBe(100);
+    expect(getUtilityAtAmount(threePoints, 500000)).toBe(50);
+    expect(getUtilityAtAmount(threePoints, 1000000)).toBe(20);
+
+    // Test interpolation between points
+    // At 250000 (halfway between 0 and 500000), should be 75 (halfway between 100 and 50)
+    expect(getUtilityAtAmount(threePoints, 250000)).toBe(75);
+    
+    // At 750000 (halfway between 500000 and 1000000), should be 35 (halfway between 50 and 20)
+    expect(getUtilityAtAmount(threePoints, 750000)).toBe(35);
+
+    // Test beyond last point
+    expect(getUtilityAtAmount(threePoints, 1500000)).toBe(20);
+  });
+
+  test('throws error for invalid inputs', () => {
+    expect(() => getUtilityAtAmount([], 100)).toThrow();
+    expect(() => getUtilityAtAmount(null as any, 100)).toThrow();
+    expect(() => getUtilityAtAmount(threePoints, null as any)).toThrow();
   });
 }); 

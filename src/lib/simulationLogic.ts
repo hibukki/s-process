@@ -103,11 +103,6 @@ export function runAllocation(params: {
         const orgId = Number(orgIdStr);
         const estimatePoints = orgIdToGraphPoints[orgId]; // For this estimator, for this org
 
-        // For debug, crash if more than 2 points for this org
-        if (estimatePoints.length > 2) {
-          throw new Error(`More than 2 points for org ${orgId} from estimator ${estId}`);
-        }
-
         const currentAllocation = orgAllocations[orgId];
         const incrementalUtility = getUtilityAtAmount(estimatePoints, currentAllocation);
 
