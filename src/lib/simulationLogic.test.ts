@@ -115,8 +115,10 @@ describe('runAllocation', () => {
     const result = runAllocation({
       orgs,
       estimatorIdTo_OrgIdToPointsEstimate,
-      totalDollars: 1000000,
-      numChunks: 4
+      configuration: {
+        totalDollars: 1000000,
+        numChunks: 4
+      }
     });
 
     // Format the log entries to match the previous golden test format
