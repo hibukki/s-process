@@ -1,9 +1,14 @@
 import { useEffect, useState } from "react";
 import { Tables } from "../../database.types";
 import { supabase } from "../lib/supabase";
-import { runAllocation, AllocationLogEntry } from "../lib/simulationLogic";
+import {
+  runAllocation,
+  AllocationLogEntry,
+  SimulationConfiguration,
+} from "../lib/simulationLogic";
 import { useSession } from "../context/SessionContext";
 import AllocationBreakdown from "./AllocationBreakdown";
+import SimulationConfigurationChoices from "./SimulationConfigurationChoices";
 
 type Org = Tables<"fundable_orgs">;
 type MarginalUtilityEstimate = Tables<"marginal_utility_estimates">;
@@ -11,8 +16,8 @@ type UtilityGraphPoint = Tables<"utility_graph_points">;
 
 export default function Simulation() {
   const { session } = useSession();
-  const [dollarsToAllocate, setDollarsToAllocate] = useState(1000000);
-  const [numTurns, setNumTurns] = useState<number>(100); // Default to 100 turns
+  const [configuration, setConfiguration] =
+    useState<SimulationConfiguration | null>(null);
 
   // State to hold final allocations and fetched organizations
   const [allocations, setAllocations] = useState<Record<number, number> | null>(
@@ -21,15 +26,9 @@ export default function Simulation() {
   const [orgs, setOrgs] = useState<Org[]>([]);
   const [log, setLog] = useState<AllocationLogEntry[]>([]);
 
-  // Add handler for input changes
-  const handleAmountChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const value = parseFloat(event.target.value);
-    if (!isNaN(value) && value >= 0) {
-      setDollarsToAllocate(value);
-    }
-  };
-
   useEffect(() => {
+    if (!configuration) return;
+
     async function runSimulation() {
       // Get orgs from Supabase.
       const { data: orgsData, error: orgError } = await supabase
@@ -88,8 +87,7 @@ export default function Simulation() {
       const result = runAllocation({
         orgs: fetchedOrgs,
         estimatorIdTo_OrgIdToPointsEstimate: estimatorUtilityMapping,
-        totalDollars: dollarsToAllocate,
-        numChunks: numTurns,
+        configuration: configuration as SimulationConfiguration,
       });
 
       setOrgs(fetchedOrgs);
@@ -97,7 +95,7 @@ export default function Simulation() {
       setLog(result.log);
     }
     runSimulation();
-  }, [dollarsToAllocate, numTurns]);
+  }, [configuration]);
 
   const formatLogEntry = (entry: AllocationLogEntry) => {
     const estimatorDisplay =
@@ -113,83 +111,50 @@ export default function Simulation() {
   return (
     <div>
       <h1>Simulation</h1>
-      <div className="mb-4">
-        <label
-          htmlFor="amount"
-          className="block text-sm font-medium text-gray-700"
-        >
-          Amount to Simulate (USD)
-        </label>
-        <input
-          type="number"
-          id="amount"
-          value={dollarsToAllocate}
-          onChange={handleAmountChange}
-          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-          min="0"
-          step="1000"
-        />
-      </div>
-      <div style={{ marginBottom: "20px" }}>
-        <p style={{ marginBottom: "10px" }}>
-          Number of turns (more turns = slower but more accurate):
-        </p>
-        <div style={{ display: "flex", gap: "10px", justifyContent: "center" }}>
-          {[10, 100, 1000, 10000].map((turns) => (
-            <button
-              key={turns}
-              onClick={() => setNumTurns(turns)}
+      <SimulationConfigurationChoices
+        onConfigurationChange={setConfiguration}
+      />
+      {configuration ? (
+        orgs.length > 0 && allocations ? (
+          <div>
+            <h2>Final Allocations:</h2>
+            <ul>
+              {orgs.map((org) => (
+                <li key={org.id}>
+                  {org.name}: ${allocations[org.id].toFixed(2)}
+                </li>
+              ))}
+            </ul>
+            <AllocationBreakdown
+              orgs={orgs}
+              log={log}
+              userIdToEmail={
+                session?.user?.id
+                  ? { [session.user.id]: session.user.email || "" }
+                  : {}
+              }
+            />
+            <h2>Allocation Log:</h2>
+            This shows the order in which the allocations were made in the
+            simulation
+            <div
               style={{
-                padding: "8px 16px",
-                backgroundColor: numTurns === turns ? "#4CAF50" : "#f0f0f0",
-                color: numTurns === turns ? "white" : "black",
-                border: "none",
-                borderRadius: "4px",
-                cursor: "pointer",
+                maxHeight: "400px",
+                overflowY: "auto",
+                border: "1px solid #ccc",
+                padding: "10px",
               }}
             >
-              {turns}
-            </button>
-          ))}
-        </div>
-      </div>
-      {orgs.length > 0 && allocations ? (
-        <div>
-          <h2>Final Allocations:</h2>
-          <ul>
-            {orgs.map((org) => (
-              <li key={org.id}>
-                {org.name}: ${allocations[org.id].toFixed(2)}
-              </li>
-            ))}
-          </ul>
-          <AllocationBreakdown
-            orgs={orgs}
-            log={log}
-            userIdToEmail={
-              session?.user?.id
-                ? { [session.user.id]: session.user.email || "" }
-                : {}
-            }
-          />
-          <h2>Allocation Log:</h2>
-          This shows the order in which the allocations were made in the
-          simulation
-          <div
-            style={{
-              maxHeight: "400px",
-              overflowY: "auto",
-              border: "1px solid #ccc",
-              padding: "10px",
-            }}
-          >
-            {log.map((entry, index) => (
-              <div key={index}>{formatLogEntry(entry)}</div>
-            ))}
+              {log.map((entry, index) => (
+                <div key={index}>{formatLogEntry(entry)}</div>
+              ))}
+            </div>
           </div>
-        </div>
+        ) : (
+          <p>Running simulation...</p>
+        )
       ) : (
-        <p>Running simulation...</p>
+        <p>Please configure the simulation parameters above to begin.</p>
       )}
     </div>
   );

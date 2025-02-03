@@ -80,13 +80,18 @@ export function getUtilityAtAmount(
   return sortedPoints[sortedPoints.length - 1].marginal_utility;
 }
 
+export type SimulationConfiguration = {
+  totalDollars: number;
+  numChunks: number;
+};
+
 export function runAllocation(params: {
   orgs: Organization[];
   estimatorIdTo_OrgIdToPointsEstimate: Record<string, OrgIdToPointsEstimate>; // estimator_id -> mapping
-  totalDollars: number;
-  numChunks: number;
+  configuration: SimulationConfiguration;
 }): SimulationResult {
-  const { orgs, estimatorIdTo_OrgIdToPointsEstimate: estimatorUtilityMappings, totalDollars, numChunks } = params;
+  const { orgs, estimatorIdTo_OrgIdToPointsEstimate: estimatorUtilityMappings, configuration } = params;
+  const { totalDollars, numChunks } = configuration;
 
   let fundsRemaining = totalDollars;
   const chunk = totalDollars / numChunks;
