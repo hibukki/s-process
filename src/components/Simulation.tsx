@@ -101,7 +101,7 @@ export default function Simulation() {
       // Run the simulation using the extracted logic
       const result = runAllocation({
         orgs: fetchedOrgs,
-        estimatorUtilityMappings: estimatorUtilityMapping,
+        estimatorIdTo_OrgIdToPointsEstimate: estimatorUtilityMapping,
         totalDollars: dollarsToAllocate,
         numChunks: chunksToAllocate,
       });

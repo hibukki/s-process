@@ -11,39 +11,74 @@ export type Organization = {
 
 export type SimulationResult = {
   allocations: Record<number, number>;  // org_id -> allocated amount
+  log: string[];  // allocation history
 };
 
 // Represents all utility estimates from one estimator
-export type EstimatorUtilityMapping = Record<number, UtilityGraphPoint[]>; // org_id -> points
+export type OrgIdToPointsEstimate = Record<number, UtilityGraphPoint[]>; // org_id -> points
+
+const assertSortedPoints = (points: UtilityGraphPoint[]) => {
+  if (!points || points.length === 0) {
+    throw new Error("Points array must not be empty or null");
+  }
+
+  // Check each point against the next point, but stop at length-1 to avoid undefined access
+  for (let i = 0; i < points.length - 1; i++) {
+    const currentPoint = points[i];
+    const nextPoint = points[i + 1];
+    
+    if (currentPoint.usd_amount >= nextPoint.usd_amount) {
+      throw new Error(
+        `Points must be sorted by ascending usd_amount. Found ${currentPoint.usd_amount} followed by ${nextPoint.usd_amount}`
+      );
+    }
+  }
+}
+
+const sortPoints = (points: UtilityGraphPoint[]) => {
+  // return points;
+  return points.sort((a, b) => a.usd_amount - b.usd_amount);
+}
+
+
+// Helper function from original code
+export function getUtilityAtAmount(
+  pointsEstimateForOneOrg: UtilityGraphPoint[],
+  usd_amount: number
+): number {
+  // Validate inputs
+  if (!pointsEstimateForOneOrg) {
+    throw new Error("sortedPoints must not be null");
+  }
+  if (typeof usd_amount !== 'number') {
+    throw new Error("usd_amount must be a number");
+  }
+  const sortedPoints = sortPoints(pointsEstimateForOneOrg);
+  assertSortedPoints(sortedPoints);
+
+  if (sortedPoints.length === 0) return 0;
+  const point = sortedPoints.find((p) => p.usd_amount === usd_amount);
+  if (point) return point.utilons;
+
+  for (let i = 0; i < sortedPoints.length - 1; i++) {
+    const p1 = sortedPoints[i];
+    const p2 = sortedPoints[i + 1];
+    if (usd_amount >= p1.usd_amount && usd_amount <= p2.usd_amount) {
+      const ratio =
+        (usd_amount - p1.usd_amount) / (p2.usd_amount - p1.usd_amount);
+      return p1.utilons + ratio * (p2.utilons - p1.utilons);
+    }
+  }
+  return sortedPoints[sortedPoints.length - 1].utilons;
+}
 
 export function runAllocation(params: {
   orgs: Organization[];
-  estimatorUtilityMappings: Record<string, EstimatorUtilityMapping>; // estimator_id -> mapping
+  estimatorIdTo_OrgIdToPointsEstimate: Record<string, OrgIdToPointsEstimate>; // estimator_id -> mapping
   totalDollars: number;
   numChunks: number;
 }): SimulationResult {
-  const { orgs, estimatorUtilityMappings, totalDollars, numChunks } = params;
-  
-  // Helper function from original code
-  function getUtilityAtAmount(
-    points: UtilityGraphPoint[],
-    usd_amount: number
-  ): number {
-    if (points.length === 0) return 0;
-    const point = points.find((p) => p.usd_amount === usd_amount);
-    if (point) return point.utilons;
-
-    for (let i = 0; i < points.length - 1; i++) {
-      const p1 = points[i];
-      const p2 = points[i + 1];
-      if (usd_amount >= p1.usd_amount && usd_amount <= p2.usd_amount) {
-        const ratio =
-          (usd_amount - p1.usd_amount) / (p2.usd_amount - p1.usd_amount);
-        return p1.utilons + ratio * (p2.utilons - p1.utilons);
-      }
-    }
-    return points[points.length - 1].utilons;
-  }
+  const { orgs, estimatorIdTo_OrgIdToPointsEstimate: estimatorUtilityMappings, totalDollars, numChunks } = params;
 
   let fundsRemaining = totalDollars;
   const chunk = totalDollars / numChunks;
@@ -54,6 +89,8 @@ export function runAllocation(params: {
 
   const estimatorIds = Object.keys(estimatorUtilityMappings);
 
+  const log: string[] = [];
+  
   let iteration = 0;
   while (fundsRemaining > 0 && iteration < 10000) {
     for (let i = 0; i < estimatorIds.length && fundsRemaining > 0; i++) {
@@ -64,9 +101,15 @@ export function runAllocation(params: {
       const orgIdToGraphPoints = estimatorUtilityMappings[estId];
       for (const orgIdStr in orgIdToGraphPoints) {
         const orgId = Number(orgIdStr);
-        const points = orgIdToGraphPoints[orgId];
+        const estimatePoints = orgIdToGraphPoints[orgId]; // For this estimator, for this org
+
+        // For debug, crash if more than 2 points for this org
+        if (estimatePoints.length > 2) {
+          throw new Error(`More than 2 points for org ${orgId} from estimator ${estId}`);
+        }
+
         const currentAllocation = orgAllocations[orgId];
-        const incrementalUtility = getUtilityAtAmount(points, currentAllocation);
+        const incrementalUtility = getUtilityAtAmount(estimatePoints, currentAllocation);
 
         if (incrementalUtility > bestIncrement) {
           bestIncrement = incrementalUtility;
@@ -78,10 +121,17 @@ export function runAllocation(params: {
         const allocationAmount = Math.min(chunk, fundsRemaining);
         orgAllocations[bestOrgId] += allocationAmount;
         fundsRemaining -= allocationAmount;
+        
+        // Add log entry for this allocation
+        const org = orgs.find(o => o.id === bestOrgId);
+        log.push(`Allocated $${allocationAmount.toFixed(2)} to ${org?.name || `Org ${bestOrgId}`} with utility ${bestIncrement.toFixed(2)} (Estimator ${estId})`);
       }
     }
     iteration++;
   }
 
-  return { allocations: orgAllocations };
+  return { 
+    allocations: orgAllocations,
+    log 
+  };
 } 

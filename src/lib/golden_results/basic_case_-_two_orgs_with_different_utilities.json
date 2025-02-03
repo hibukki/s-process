@@ -1,0 +1,12 @@
+{
+  "allocations": {
+    "1": 500000,
+    "2": 500000
+  },
+  "log": [
+    "Allocated $250000.00 to Org 1 with utility 100.00 (Estimator estimator1)",
+    "Allocated $250000.00 to Org 1 with utility 50.00 (Estimator estimator1)",
+    "Allocated $250000.00 to Org 2 with utility 10.00 (Estimator estimator1)",
+    "Allocated $250000.00 to Org 2 with utility 5.00 (Estimator estimator1)"
+  ]
+}

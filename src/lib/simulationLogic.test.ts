@@ -1,89 +1,111 @@
 import { runAllocation, Organization, UtilityGraphPoint } from './simulationLogic';
+import * as fs from 'fs';
+import * as path from 'path';
 
 type TestCase = {
   name: string;
-  orgs: Organization[];
-  utilityPoints: {
+  orgIdToPointsEstimate: {
     [orgId: number]: UtilityGraphPoint[];
-  };
-  expectedResult: {
-    totalAllocated: number;
-    hasHigherAllocation?: [number, number]; // [orgId1, orgId2] where orgId1 should get more than orgId2
   };
 };
 
 const testCases: TestCase[] = [
   {
-    name: 'basic case - two orgs with different utilities',
-    orgs: [
-      { id: 1, name: "Org 1" },
-      { id: 2, name: "Org 2" }
-    ],
-    utilityPoints: {
+    name: 'one org diminishing utility',
+    orgIdToPointsEstimate: {
       1: [
-        { usd_amount: 0, utilons: 0, marginal_utility_estimate_id: 1 },
-        { usd_amount: 500000, utilons: 100, marginal_utility_estimate_id: 1 }
-      ],
-      2: [
-        { usd_amount: 0, utilons: 0, marginal_utility_estimate_id: 2 },
-        { usd_amount: 500000, utilons: 50, marginal_utility_estimate_id: 2 }
+        { usd_amount: 0, utilons: 100, marginal_utility_estimate_id: 1 },
+        { usd_amount: 1000000, utilons: 0, marginal_utility_estimate_id: 1 }
       ]
     },
-    expectedResult: {
-      totalAllocated: 1000000,
-      hasHigherAllocation: [1, 2] // Org 1 should get more than Org 2
-    }
   },
   {
-    name: 'equal utility case',
-    orgs: [
-      { id: 3, name: "Org 3" },
-      { id: 4, name: "Org 4" }
-    ],
-    utilityPoints: {
-      3: [
-        { usd_amount: 0, utilons: 0, marginal_utility_estimate_id: 3 },
-        { usd_amount: 500000, utilons: 100, marginal_utility_estimate_id: 3 }
+    name: 'two orgs diminishing utility',
+    orgIdToPointsEstimate: {
+      1: [
+        { usd_amount: 0, utilons: 100, marginal_utility_estimate_id: 1 },
+        { usd_amount: 1000000, utilons: 0, marginal_utility_estimate_id: 1 }
       ],
-      4: [
-        { usd_amount: 0, utilons: 0, marginal_utility_estimate_id: 4 },
-        { usd_amount: 500000, utilons: 100, marginal_utility_estimate_id: 4 }
+      2: [
+        { usd_amount: 0, utilons: 100, marginal_utility_estimate_id: 2 },
+        { usd_amount: 1000000, utilons: 0, marginal_utility_estimate_id: 2 }
       ]
     },
-    expectedResult: {
-      totalAllocated: 1000000
-      // No hasHigherAllocation check since they should be roughly equal
-    }
-  }
+  },
+  {
+    name: 'basic case - two orgs with different utilities',
+    orgIdToPointsEstimate: {
+      1: [
+        { usd_amount: 0, utilons: 100, marginal_utility_estimate_id: 1 },
+        { usd_amount: 500000, utilons: 0, marginal_utility_estimate_id: 1 }
+      ],
+      2: [
+        { usd_amount: 0, utilons: 10, marginal_utility_estimate_id: 2 },
+        { usd_amount: 500000, utilons: 0, marginal_utility_estimate_id: 2 }
+      ]
+    },
+  },
 ];
 
 describe('runAllocation', () => {
-  test.each(testCases)('$name', ({ orgs, utilityPoints, expectedResult }) => {
-    const estimatorUtilityMappings = {
-      "estimator1": utilityPoints
+  // Create golden_results directory if it doesn't exist
+  const goldenDir = path.join(__dirname, 'golden_results');
+  if (!fs.existsSync(goldenDir)) {
+    fs.mkdirSync(goldenDir);
+  }
+
+  test.each(testCases)('$name', ({ name, orgIdToPointsEstimate }) => {
+    const estimatorIdTo_OrgIdToPointsEstimate = {
+      "estimator1": orgIdToPointsEstimate
     };
+
+    const orgs = Object.keys(orgIdToPointsEstimate).map(orgId => ({ id: Number(orgId), name: `Org ${orgId}` }));
 
     const result = runAllocation({
       orgs,
-      estimatorUtilityMappings,
+      estimatorIdTo_OrgIdToPointsEstimate,
       totalDollars: 1000000,
-      numChunks: 10
+      numChunks: 4
     });
 
     // Basic assertions
     expect(result).toBeDefined();
     expect(result.allocations).toBeDefined();
     expect(Object.keys(result.allocations).length).toBe(orgs.length);
-    
-    // Check total allocation
-    const totalAllocated = Object.values(result.allocations)
-      .reduce((sum, amount) => sum + amount, 0);
-    expect(totalAllocated).toBe(expectedResult.totalAllocated);
 
-    // Check relative allocation if specified
-    if (expectedResult.hasHigherAllocation) {
-      const [higherOrgId, lowerOrgId] = expectedResult.hasHigherAllocation;
-      expect(result.allocations[higherOrgId]).toBeGreaterThan(result.allocations[lowerOrgId]);
+    // Save and compare golden results
+    const goldenFilePath = path.join(goldenDir, `${name.replace(/\s+/g, '_')}.json`);
+    const formattedResult = JSON.stringify(result, null, 2);
+
+    if (!fs.existsSync(goldenFilePath)) {
+      // If golden file doesn't exist, create it
+      fs.writeFileSync(goldenFilePath, formattedResult);
+
+      // The test should fail until the golden file is staged/committed.
+      throw new Error(
+        `Golden test failed for "${name}". Results have changed.\n` +
+        `If this change is expected, stage the new golden file at:\n` +
+        `${goldenFilePath}`
+      );
+    } else {
+
+      // If the golden file isn't staged/committed, the test should fail.
+      // throw new Error(
+      //   `Golden test failed for "${name}". Results have changed.\n` +
+      //   `If this change is expected, stage the new golden file at:\n` +
+      //   `${goldenFilePath}`
+      // );
+
+      // Compare with existing golden file
+      const existingGolden = fs.readFileSync(goldenFilePath, 'utf-8');
+      if (existingGolden !== formattedResult) {
+        fs.writeFileSync(goldenFilePath, formattedResult);
+        throw new Error(
+          `Golden test failed for "${name}". Results have changed.\n` +
+          `If this change is expected, stage the new golden file at:\n` +
+          `${goldenFilePath}`
+        );
+      }
     }
   });
 }); 
