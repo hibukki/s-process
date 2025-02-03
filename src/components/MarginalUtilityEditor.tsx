@@ -203,6 +203,12 @@ const MarginalUtilityEditor = () => {
           />
         ))}
       </svg>
+
+      {sortedPoints.map(point => (
+        <div key={point.id}>
+          <p>Point {point.id}: usd=${Math.round((point.x / width) * maxDollars).toLocaleString()}, utilons={Math.round((point.y / height) * maxUtilons)}</p>
+        </div>
+      ))}
     </div>
   );
 };
