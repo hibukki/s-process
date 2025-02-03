@@ -1,30 +1,66 @@
 import { runAllocation, Organization, UtilityGraphPoint } from './simulationLogic';
 
-describe('runAllocation', () => {
-  it('should allocate funds without crashing', () => {
-    // Test data
-    const orgs: Organization[] = [
+type TestCase = {
+  name: string;
+  orgs: Organization[];
+  utilityPoints: {
+    [orgId: number]: UtilityGraphPoint[];
+  };
+  expectedResult: {
+    totalAllocated: number;
+    hasHigherAllocation?: [number, number]; // [orgId1, orgId2] where orgId1 should get more than orgId2
+  };
+};
+
+const testCases: TestCase[] = [
+  {
+    name: 'basic case - two orgs with different utilities',
+    orgs: [
       { id: 1, name: "Org 1" },
       { id: 2, name: "Org 2" }
-    ];
+    ],
+    utilityPoints: {
+      1: [
+        { usd_amount: 0, utilons: 0, marginal_utility_estimate_id: 1 },
+        { usd_amount: 500000, utilons: 100, marginal_utility_estimate_id: 1 }
+      ],
+      2: [
+        { usd_amount: 0, utilons: 0, marginal_utility_estimate_id: 2 },
+        { usd_amount: 500000, utilons: 50, marginal_utility_estimate_id: 2 }
+      ]
+    },
+    expectedResult: {
+      totalAllocated: 1000000,
+      hasHigherAllocation: [1, 2] // Org 1 should get more than Org 2
+    }
+  },
+  {
+    name: 'equal utility case',
+    orgs: [
+      { id: 3, name: "Org 3" },
+      { id: 4, name: "Org 4" }
+    ],
+    utilityPoints: {
+      3: [
+        { usd_amount: 0, utilons: 0, marginal_utility_estimate_id: 3 },
+        { usd_amount: 500000, utilons: 100, marginal_utility_estimate_id: 3 }
+      ],
+      4: [
+        { usd_amount: 0, utilons: 0, marginal_utility_estimate_id: 4 },
+        { usd_amount: 500000, utilons: 100, marginal_utility_estimate_id: 4 }
+      ]
+    },
+    expectedResult: {
+      totalAllocated: 1000000
+      // No hasHigherAllocation check since they should be roughly equal
+    }
+  }
+];
 
-    // Create utility graph points for each org
-    const org1Points: UtilityGraphPoint[] = [
-      { usd_amount: 0, utilons: 0, marginal_utility_estimate_id: 1 },
-      { usd_amount: 500000, utilons: 100, marginal_utility_estimate_id: 1 }
-    ];
-
-    const org2Points: UtilityGraphPoint[] = [
-      { usd_amount: 0, utilons: 0, marginal_utility_estimate_id: 2 },
-      { usd_amount: 500000, utilons: 50, marginal_utility_estimate_id: 2 }
-    ];
-
-    // Create estimator mappings
+describe('runAllocation', () => {
+  test.each(testCases)('$name', ({ orgs, utilityPoints, expectedResult }) => {
     const estimatorUtilityMappings = {
-      "estimator1": {
-        1: org1Points,
-        2: org2Points
-      }
+      "estimator1": utilityPoints
     };
 
     const result = runAllocation({
@@ -37,14 +73,17 @@ describe('runAllocation', () => {
     // Basic assertions
     expect(result).toBeDefined();
     expect(result.allocations).toBeDefined();
-    expect(Object.keys(result.allocations).length).toBe(2);
+    expect(Object.keys(result.allocations).length).toBe(orgs.length);
     
-    // The total allocated should equal the total dollars
+    // Check total allocation
     const totalAllocated = Object.values(result.allocations)
       .reduce((sum, amount) => sum + amount, 0);
-    expect(totalAllocated).toBe(1000000);
+    expect(totalAllocated).toBe(expectedResult.totalAllocated);
 
-    // Org 1 should get more money since it has higher utility
-    expect(result.allocations[1]).toBeGreaterThan(result.allocations[2]);
+    // Check relative allocation if specified
+    if (expectedResult.hasHigherAllocation) {
+      const [higherOrgId, lowerOrgId] = expectedResult.hasHigherAllocation;
+      expect(result.allocations[higherOrgId]).toBeGreaterThan(result.allocations[lowerOrgId]);
+    }
   });
 }); 
