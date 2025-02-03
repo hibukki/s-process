@@ -8,8 +8,8 @@ type MarginalUtilityEstimate = Tables<"marginal_utility_estimates">;
 type UtilityGraphPoint = Tables<"utility_graph_points">;
 
 export default function Simulation() {
-  const dollarsToAllocate = 1000000; // For all estimators together
-  const chunksToAllocate = 10;
+  const [dollarsToAllocate, setDollarsToAllocate] = useState(1000000);
+  const [numTurns, setNumTurns] = useState<number>(100); // Default to 100 turns
 
   // State to hold final allocations and fetched organizations
   const [allocations, setAllocations] = useState<Record<number, number> | null>(
@@ -17,6 +17,14 @@ export default function Simulation() {
   );
   const [orgs, setOrgs] = useState<Org[]>([]);
   const [log, setLog] = useState<string[]>([]);
+
+  // Add handler for input changes
+  const handleAmountChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const value = parseFloat(event.target.value);
+    if (!isNaN(value) && value >= 0) {
+      setDollarsToAllocate(value);
+    }
+  };
 
   useEffect(() => {
     async function runSimulation() {
@@ -78,7 +86,7 @@ export default function Simulation() {
         orgs: fetchedOrgs,
         estimatorIdTo_OrgIdToPointsEstimate: estimatorUtilityMapping,
         totalDollars: dollarsToAllocate,
-        numChunks: chunksToAllocate,
+        numChunks: numTurns,
       });
 
       setOrgs(fetchedOrgs);
@@ -86,11 +94,51 @@ export default function Simulation() {
       setLog(result.log);
     }
     runSimulation();
-  }, [dollarsToAllocate]);
+  }, [dollarsToAllocate, numTurns]);
 
   return (
     <div>
       <h1>Simulation</h1>
+      <div className="mb-4">
+        <label
+          htmlFor="amount"
+          className="block text-sm font-medium text-gray-700"
+        >
+          Amount to Simulate (USD)
+        </label>
+        <input
+          type="number"
+          id="amount"
+          value={dollarsToAllocate}
+          onChange={handleAmountChange}
+          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+          min="0"
+          step="1000"
+        />
+      </div>
+      <div style={{ marginBottom: "20px" }}>
+        <p style={{ marginBottom: "10px" }}>
+          Number of turns (more turns = slower but more accurate):
+        </p>
+        <div style={{ display: "flex", gap: "10px", justifyContent: "center" }}>
+          {[10, 100, 1000, 10000].map((turns) => (
+            <button
+              key={turns}
+              onClick={() => setNumTurns(turns)}
+              style={{
+                padding: "8px 16px",
+                backgroundColor: numTurns === turns ? "#4CAF50" : "#f0f0f0",
+                color: numTurns === turns ? "white" : "black",
+                border: "none",
+                borderRadius: "4px",
+                cursor: "pointer",
+              }}
+            >
+              {turns}
+            </button>
+          ))}
+        </div>
+      </div>
       {orgs.length > 0 && allocations ? (
         <div>
           <h2>Final Allocations:</h2>
