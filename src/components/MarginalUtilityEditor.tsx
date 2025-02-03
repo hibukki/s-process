@@ -1,4 +1,4 @@
-import React, { useState, useRef, useContext } from "react";
+import React, { useState, useRef, useContext, useEffect } from "react";
 import { ThemeContext } from "../context/ThemeContext";
 
 export interface UsdUtilonPoint {
@@ -73,6 +73,20 @@ const MarginalUtilityEditor = ({
   const textColor = isDarkMode ? "#d1d5db" : "black"; // gray-300 in dark mode
   const lineColor = isDarkMode ? "#60a5fa" : "blue"; // blue-400 in dark mode
 
+  const [showSaveSuccess, setShowSaveSuccess] = useState(false);
+
+  // Reset success message when points match initialPoints
+  useEffect(() => {
+    const pointsMatch = usdUtilonPoints.every(
+      (point, index) =>
+        point.usd_amount === initialPoints[index]?.usd_amount &&
+        point.marginal_utility === initialPoints[index]?.marginal_utility
+    );
+    if (pointsMatch) {
+      setShowSaveSuccess(false);
+    }
+  }, [usdUtilonPoints, initialPoints]);
+
   const getSVGCoords = (e: React.MouseEvent | MouseEvent) => {
     const svg = svgRef.current;
     if (!svg) return { x: 0, y: 0 };
@@ -133,6 +147,13 @@ const MarginalUtilityEditor = ({
   const sortedPoints = [...usdUtilonPoints]
     .map(xyPointFromUsdUtilonPoint)
     .sort((a, b) => a.x - b.x);
+
+  const handleSave = () => {
+    onSave(usdUtilonPoints);
+    setShowSaveSuccess(true);
+    // Hide success message after 3 seconds
+    setTimeout(() => setShowSaveSuccess(false), 3000);
+  };
 
   return (
     <div className="w-full max-w-lg mx-auto p-4">
@@ -281,20 +302,25 @@ const MarginalUtilityEditor = ({
         })}
       </svg>
 
-      {/* Save Points Button */}
-      {/* Did anything change? */}
-      {usdUtilonPoints.some(
+      {/* Save Points Button and Success Message */}
+      {(usdUtilonPoints.some(
         (point, index) =>
           point.usd_amount !== initialPoints[index]?.usd_amount ||
           point.marginal_utility !== initialPoints[index]?.marginal_utility
-      ) && (
-        <div className="mt-4">
+      ) ||
+        showSaveSuccess) && (
+        <div className="mt-4 flex items-center gap-4">
           <button
-            onClick={() => onSave(usdUtilonPoints)}
+            onClick={handleSave}
             className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
           >
             Save Estimate
           </button>
+          {showSaveSuccess && (
+            <span className="text-green-600 dark:text-green-400">
+              ✓ Changes saved successfully
+            </span>
+          )}
         </div>
       )}
 
