@@ -30,17 +30,31 @@ export type Database = {
       marginal_utility_estimates: {
         Row: {
           created_at: string | null
+          estimator_id: string
           id: number
+          org_id: number
         }
         Insert: {
           created_at?: string | null
+          estimator_id: string
           id?: never
+          org_id: number
         }
         Update: {
           created_at?: string | null
+          estimator_id?: string
           id?: never
+          org_id?: number
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "marginal_utility_estimates_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "fundable_orgs"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       utility_graph_points: {
         Row: {
