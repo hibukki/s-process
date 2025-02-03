@@ -1,13 +1,15 @@
 import { useEffect, useState } from "react";
 import { Tables } from "../../database.types";
 import { supabase } from "../lib/supabase";
-import { runAllocation } from "../lib/simulationLogic";
+import { runAllocation, AllocationLogEntry } from "../lib/simulationLogic";
+import { useSession } from "../context/SessionContext";
 
 type Org = Tables<"fundable_orgs">;
 type MarginalUtilityEstimate = Tables<"marginal_utility_estimates">;
 type UtilityGraphPoint = Tables<"utility_graph_points">;
 
 export default function Simulation() {
+  const { session } = useSession();
   const [dollarsToAllocate, setDollarsToAllocate] = useState(1000000);
   const [numTurns, setNumTurns] = useState<number>(100); // Default to 100 turns
 
@@ -16,7 +18,7 @@ export default function Simulation() {
     null
   );
   const [orgs, setOrgs] = useState<Org[]>([]);
-  const [log, setLog] = useState<string[]>([]);
+  const [log, setLog] = useState<AllocationLogEntry[]>([]);
 
   // Add handler for input changes
   const handleAmountChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -96,6 +98,17 @@ export default function Simulation() {
     runSimulation();
   }, [dollarsToAllocate, numTurns]);
 
+  const formatLogEntry = (entry: AllocationLogEntry) => {
+    const estimatorDisplay =
+      entry.estimatorId === session?.user?.id
+        ? session.user.email
+        : `Estimator ${entry.estimatorId}`;
+
+    return `Allocated $${entry.allocationAmount.toFixed(2)} to ${
+      entry.orgName
+    } with utility ${entry.utility.toFixed(2)} (${estimatorDisplay})`;
+  };
+
   return (
     <div>
       <h1>Simulation</h1>
@@ -159,7 +172,7 @@ export default function Simulation() {
             }}
           >
             {log.map((entry, index) => (
-              <div key={index}>{entry}</div>
+              <div key={index}>{formatLogEntry(entry)}</div>
             ))}
           </div>
         </div>

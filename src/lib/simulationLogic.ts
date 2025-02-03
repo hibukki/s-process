@@ -9,9 +9,17 @@ export type Organization = {
   name: string;
 };
 
+export type AllocationLogEntry = {
+  estimatorId: string;
+  orgId: number;
+  orgName: string;
+  allocationAmount: number;
+  utility: number;
+};
+
 export type SimulationResult = {
   allocations: Record<number, number>;  // org_id -> allocated amount
-  log: string[];  // allocation history
+  log: AllocationLogEntry[];  // allocation history
 };
 
 // Represents all utility estimates from one estimator
@@ -89,7 +97,7 @@ export function runAllocation(params: {
 
   const estimatorIds = Object.keys(estimatorUtilityMappings);
 
-  const log: string[] = [];
+  const log: AllocationLogEntry[] = [];
   
   let iteration = 0;
   while (fundsRemaining > 0 && iteration < 10000) {
@@ -117,9 +125,15 @@ export function runAllocation(params: {
         orgAllocations[bestOrgId] += allocationAmount;
         fundsRemaining -= allocationAmount;
         
-        // Add log entry for this allocation
+        // Add typed log entry for this allocation
         const org = orgs.find(o => o.id === bestOrgId);
-        log.push(`Allocated $${allocationAmount.toFixed(2)} to ${org?.name || `Org ${bestOrgId}`} with utility ${bestIncrement.toFixed(2)} (Estimator ${estId})`);
+        log.push({
+          estimatorId: estId,
+          orgId: bestOrgId,
+          orgName: org?.name || `Org ${bestOrgId}`,
+          allocationAmount: allocationAmount,
+          utility: bestIncrement
+        });
       }
     }
     iteration++;

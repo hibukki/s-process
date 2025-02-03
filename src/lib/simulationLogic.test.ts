@@ -119,18 +119,26 @@ describe('runAllocation', () => {
       numChunks: 4
     });
 
+    // Format the log entries to match the previous golden test format
+    const formattedResult = {
+      allocations: result.allocations,
+      log: result.log.map(entry => 
+        `Allocated $${entry.allocationAmount.toFixed(2)} to ${entry.orgName} with utility ${entry.utility.toFixed(2)} (Estimator ${entry.estimatorId})`
+      )
+    };
+
     // Basic assertions
-    expect(result).toBeDefined();
-    expect(result.allocations).toBeDefined();
-    expect(Object.keys(result.allocations).length).toBe(orgs.length);
+    expect(formattedResult).toBeDefined();
+    expect(formattedResult.allocations).toBeDefined();
+    expect(Object.keys(formattedResult.allocations).length).toBe(orgs.length);
 
     // Save and compare golden results
     const goldenFilePath = path.join(goldenDir, `${name.replace(/\s+/g, '_')}.json`);
-    const formattedResult = JSON.stringify(result, null, 2);
+    const formattedJson = JSON.stringify(formattedResult, null, 2);
 
     if (!fs.existsSync(goldenFilePath)) {
       // If golden file doesn't exist, create it
-      fs.writeFileSync(goldenFilePath, formattedResult);
+      fs.writeFileSync(goldenFilePath, formattedJson);
 
       // The test should fail until the golden file is staged/committed.
       throw new Error(
@@ -149,8 +157,8 @@ describe('runAllocation', () => {
 
       // Compare with existing golden file
       const existingGolden = fs.readFileSync(goldenFilePath, 'utf-8');
-      if (existingGolden !== formattedResult) {
-        fs.writeFileSync(goldenFilePath, formattedResult);
+      if (existingGolden !== formattedJson) {
+        fs.writeFileSync(goldenFilePath, formattedJson);
         throw new Error(
           `Golden test failed for "${name}". Results have changed.\n` +
           `If this change is expected, stage the new golden file at:\n` +
