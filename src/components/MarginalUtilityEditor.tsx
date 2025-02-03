@@ -1,4 +1,5 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useContext } from 'react';
+import { ThemeContext } from '../context/ThemeContext';
 
 export interface UsdUtilonPoint {
   id: number;
@@ -55,6 +56,11 @@ const MarginalUtilityEditor = ({ initialPoints, onSave }: { initialPoints: UsdUt
   const [selectedPoint, setSelectedPoint] = useState<number | null>(null);
   const svgRef = useRef<SVGSVGElement | null>(null);
   
+  const { isDarkMode } = useContext(ThemeContext);
+  const axisColor = isDarkMode ? '#9ca3af' : 'black'; // gray-400 in dark mode
+  const textColor = isDarkMode ? '#d1d5db' : 'black'; // gray-300 in dark mode
+  const lineColor = isDarkMode ? '#60a5fa' : 'blue'; // blue-400 in dark mode
+
   const getSVGCoords = (e: React.MouseEvent | MouseEvent) => {
     const svg = svgRef.current;
     if (!svg) return { x: 0, y: 0 };
@@ -137,7 +143,7 @@ const MarginalUtilityEditor = ({ initialPoints, onSave }: { initialPoints: UsdUt
         ref={svgRef}
         width={width} 
         height={height} 
-        className="bg-white border border-gray-300 rounded-lg"
+        className="bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg"
       >
         {/* Axes */}
         <line 
@@ -145,7 +151,7 @@ const MarginalUtilityEditor = ({ initialPoints, onSave }: { initialPoints: UsdUt
           y1={height - padding} 
           x2={width - padding} 
           y2={height - padding} 
-          stroke="black" 
+          stroke={axisColor}
           strokeWidth="2"
         />
         <line 
@@ -153,16 +159,17 @@ const MarginalUtilityEditor = ({ initialPoints, onSave }: { initialPoints: UsdUt
           y1={padding} 
           x2={padding} 
           y2={height - padding} 
-          stroke="black" 
+          stroke={axisColor}
           strokeWidth="2"
         />
         
-        {/* X-axis label and values */}
+        {/* X-axis label and values - update fill color */}
         <text
           x={width / 2}
           y={height - textPadding}
           textAnchor="middle"
           className="text-sm"
+          fill={textColor}
         >
           Dollars
         </text>
@@ -171,6 +178,7 @@ const MarginalUtilityEditor = ({ initialPoints, onSave }: { initialPoints: UsdUt
           y={height - textPadding}
           textAnchor="middle"
           className="text-sm"
+          fill={textColor}
         >
           0
         </text>
@@ -179,17 +187,19 @@ const MarginalUtilityEditor = ({ initialPoints, onSave }: { initialPoints: UsdUt
           y={height - textPadding}
           textAnchor="middle"
           className="text-sm"
+          fill={textColor}
         >
           $10M
         </text>
 
-        {/* Y-axis label and values */}
+        {/* Y-axis label and values - update fill color */}
         <text
           x={textPadding}
           y={height / 2}
           textAnchor="middle"
           transform={`rotate(-90, ${textPadding}, ${height / 2})`}
           className="text-sm"
+          fill={textColor}
         >
           Utilons
         </text>
@@ -198,6 +208,7 @@ const MarginalUtilityEditor = ({ initialPoints, onSave }: { initialPoints: UsdUt
           y={height - padding}
           textAnchor="end"
           className="text-sm"
+          fill={textColor}
         >
           0
         </text>
@@ -206,14 +217,15 @@ const MarginalUtilityEditor = ({ initialPoints, onSave }: { initialPoints: UsdUt
           y={padding}
           textAnchor="end"
           className="text-sm"
+          fill={textColor}
         >
           100
         </text>
         
-        {/* Lines connecting points */}
+        {/* Lines connecting points - update stroke color */}
         <path 
           d={`M ${sortedPoints.map(p => `${p.x},${p.y}`).join(' L ')}`}
-          stroke="blue" 
+          stroke={lineColor}
           strokeWidth="2"
           fill="none"
         />
