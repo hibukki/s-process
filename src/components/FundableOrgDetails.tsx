@@ -188,6 +188,12 @@ export default function FundableOrgDetails() {
           </button>
         )}
       </div>
+      <Link
+        to="/simulation"
+        className="text-blue-500 hover:underline mb-4 inline-block"
+      >
+        Go to simulation
+      </Link>
     </div>
   );
 }

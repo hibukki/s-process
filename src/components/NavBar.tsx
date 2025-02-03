@@ -5,10 +5,10 @@ const NavBar = () => {
   const location = useLocation();
 
   return (
-    <div className="bg-white dark:bg-gray-800">
-      <div className="container mx-auto px-4">
+    <div className="nav-container">
+      <div className="container mx-auto">
         <div className="flex justify-between items-center">
-          <nav className="flex space-x-1 nav-tabs">
+          <nav className="flex space-x-4 nav-tabs">
             <Link
               to="/"
               className={`nav-tab px-6 py-4 text-sm font-medium transition-colors ${
@@ -30,7 +30,7 @@ const NavBar = () => {
               Simulation
             </Link>
           </nav>
-          <div className="py-2">
+          <div className="py-4">
             <Login />
           </div>
         </div>

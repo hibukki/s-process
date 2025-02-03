@@ -78,8 +78,9 @@ function App() {
             ) : (
               <Login />
             )}
-            <div className="container mx-auto px-4 py-8">
-              <h2 className="text-2xl font-bold mb-4">What is this?</h2>
+            <div className="my-16"></div>
+            <div className="container mx-auto px-4 py-8 mt-16 pt-16">
+              <h2 className="text-2xl font-bold mb-4">What is this website?</h2>
 
               <p className="mb-4">
                 A draft of the "s-process", as presented in this{" "}
