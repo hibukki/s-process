@@ -113,8 +113,8 @@ describe('runAllocation', () => {
 describe('getUtilityAtAmount', () => {
   const threePoints: UtilityGraphPoint[] = [
     { usd_amount: 0, utilons: 100, marginal_utility_estimate_id: 1 },
-    { usd_amount: 500000, utilons: 50, marginal_utility_estimate_id: 1 },
-    { usd_amount: 1000000, utilons: 20, marginal_utility_estimate_id: 1 }
+    { usd_amount: 500_000, utilons: 50, marginal_utility_estimate_id: 1 },
+    { usd_amount: 1_000_000, utilons: 20, marginal_utility_estimate_id: 1 }
   ];
 
   test('calculates utility correctly with 3 points', () => {
