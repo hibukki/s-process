@@ -43,7 +43,15 @@ const MarginalUtilityEditor = () => {
   
   const handleDrag = (e: MouseEvent, pointId: number) => {
     const coords = getSVGCoords(e);
-    const newX = Math.max(padding, Math.min(width - padding, coords.x));
+    
+    // Find if this is the leftmost point
+    const isLeftmostPoint = points.every(p => p.id === pointId || p.x > padding);
+    
+    // If leftmost point, keep x at padding (x=0 in graph coordinates)
+    const newX = isLeftmostPoint 
+      ? padding
+      : Math.max(padding, Math.min(width - padding, coords.x));
+      
     const newY = Math.max(padding, Math.min(height - padding, coords.y));
     
     setPoints(points.map(point => 
