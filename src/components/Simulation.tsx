@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Tables } from "../../database.types";
 import { supabase } from "../lib/supabase";
+import { runAllocation } from "../lib/simulationLogic";
 
 type Org = Tables<"fundable_orgs">;
 type MarginalUtilityEstimate = Tables<"marginal_utility_estimates">;
@@ -88,7 +89,6 @@ export default function Simulation() {
         if (!estimatorUtilityMapping[estimator_id]) {
           estimatorUtilityMapping[estimator_id] = {};
         }
-        // Get all graph points for this estimate and sort them by usd_amount.
         const points = utilityGraphPoints.filter(
           (p) => p.marginal_utility_estimate_id === id
         );
@@ -98,63 +98,16 @@ export default function Simulation() {
 
       console.log("Estimator utility mapping:", estimatorUtilityMapping);
 
-      let fundsRemaining = dollarsToAllocate;
-      const chunk = dollarsToAllocate / chunksToAllocate; // Fixed allocation chunk
-      const orgAllocations: Record<number, number> = {};
-      fetchedOrgs.forEach((org) => {
-        orgAllocations[org.id] = 0;
+      // Run the simulation using the extracted logic
+      const result = runAllocation({
+        orgs: fetchedOrgs,
+        estimatorUtilityMappings: estimatorUtilityMapping,
+        totalDollars: dollarsToAllocate,
+        numChunks: chunksToAllocate,
       });
 
-      // Get a list of unique estimator IDs.
-      const estimatorIds = Object.keys(estimatorUtilityMapping);
-
-      // Run the simulation in round-robin fashion over the estimators.
-      let iteration = 0; // safeguard against infinite loops
-      while (fundsRemaining > 0 && iteration < 10000) {
-        // console.log(`Iteration ${iteration}`);
-
-        // For each estimator:
-        for (let i = 0; i < estimatorIds.length && fundsRemaining > 0; i++) {
-          const estId = estimatorIds[i];
-          let bestIncrement = -Infinity;
-          let bestOrgId: number | null = null;
-
-          // For each org that this estimator has an estimate for:
-          //  org_id -> UtilityGraphPoint[]
-          const orgIdToGraphPoints = estimatorUtilityMapping[estId];
-          for (const orgIdStr in orgIdToGraphPoints) {
-            // console.log(`Org ${orgIdStr}`);
-            const orgId = Number(orgIdStr);
-            const points = orgIdToGraphPoints[orgId];
-            const currentAllocation = orgAllocations[orgId];
-            const incrementalUtility = getUtilityAtAmount(
-              points,
-              currentAllocation
-            );
-            console.log(
-              `Org ${orgId} has ${currentAllocation} allocated and ${incrementalUtility} incremental utility.`
-            );
-
-            if (incrementalUtility > bestIncrement) {
-              bestIncrement = incrementalUtility;
-              bestOrgId = orgId;
-            }
-          }
-          if (bestOrgId !== null) {
-            // If remaining funds are less than a full chunk, allocate what remains.
-            const allocationAmount =
-              fundsRemaining < chunk ? fundsRemaining : chunk;
-            orgAllocations[bestOrgId] += allocationAmount;
-            fundsRemaining -= allocationAmount;
-
-            console.log(
-              `Allocated ${allocationAmount} to org ${bestOrgId}. ${fundsRemaining} remaining.`
-            );
-          }
-        }
-        iteration++;
-      }
-      setAllocations(orgAllocations);
+      setOrgs(fetchedOrgs);
+      setAllocations(result.allocations);
     }
     runSimulation();
   }, [dollarsToAllocate]);
