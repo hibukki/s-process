@@ -20,7 +20,7 @@ const testCases: TestCase[] = [
     },
   },
   {
-    name: 'two orgs diminishing utility',
+    name: 'two orgs equal diminishing utility',
     orgIdToPointsEstimate: {
       1: [
         { usd_amount: 0, utilons: 100, marginal_utility_estimate_id: 1 },
@@ -33,7 +33,7 @@ const testCases: TestCase[] = [
     },
   },
   {
-    name: 'basic case - two orgs with different utilities',
+    name: 'org1 has higher utility but saturates at 500k',
     orgIdToPointsEstimate: {
       1: [
         { usd_amount: 0, utilons: 100, marginal_utility_estimate_id: 1 },
