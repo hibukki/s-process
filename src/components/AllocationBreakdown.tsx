@@ -158,6 +158,11 @@ export default function AllocationBreakdown({
           )}
         />
       </div>
+      For more examples of what this diagram library can do, see the{" "}
+      <a href="https://www.npmjs.com/package/@nivo/sankey">
+        Nivo Sankey Package
+      </a>
+      .
     </div>
   );
 }
