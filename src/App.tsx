@@ -9,6 +9,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import FundableOrgDetails from "./components/FundableOrgDetails";
 import Simulation from "./components/Simulation";
 import NavBar from "./components/NavBar";
+import Login from "./components/Login";
 
 function App() {
   const [session, setSession] = useState<Session | null>(null);
@@ -60,18 +61,22 @@ function App() {
       <SessionContext.Provider value={{ session, setSession }}>
         <BrowserRouter>
           <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-            <NavBar />
-            {session && (
-              <div className="container mx-auto px-4 py-8">
-                <Routes>
-                  <Route path="/" element={<FundableOrgsList />} />
-                  <Route
-                    path="/fundableorgs/:orgId"
-                    element={<FundableOrgDetails />}
-                  />
-                  <Route path="/simulation" element={<Simulation />} />
-                </Routes>
-              </div>
+            {session ? (
+              <>
+                <NavBar />
+                <div className="container mx-auto px-4 py-8">
+                  <Routes>
+                    <Route path="/" element={<FundableOrgsList />} />
+                    <Route
+                      path="/fundableorgs/:orgId"
+                      element={<FundableOrgDetails />}
+                    />
+                    <Route path="/simulation" element={<Simulation />} />
+                  </Routes>
+                </div>
+              </>
+            ) : (
+              <Login />
             )}
           </div>
         </BrowserRouter>
