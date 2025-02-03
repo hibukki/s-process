@@ -4,45 +4,53 @@ import * as path from 'path';
 
 type TestCase = {
   name: string;
-  orgIdToPointsEstimate: {
-    [orgId: number]: UtilityGraphPoint[];
+  recommenderId_to_orgIdToPointsEstimate: {
+    [recommenderId: string]: {
+      [orgId: number]: UtilityGraphPoint[];
+    }
   };
 };
 
 const testCases: TestCase[] = [
   {
     name: 'one org diminishing utility',
-    orgIdToPointsEstimate: {
-      1: [
-        { usd_amount: 0, marginal_utility: 100, marginal_utility_estimate_id: 1 },
-        { usd_amount: 1000000, marginal_utility: 0, marginal_utility_estimate_id: 1 }
-      ]
+    recommenderId_to_orgIdToPointsEstimate: {
+      "estimator1": {
+        1: [
+          { usd_amount: 0, marginal_utility: 100, marginal_utility_estimate_id: 1 },
+          { usd_amount: 1000000, marginal_utility: 0, marginal_utility_estimate_id: 1 }
+        ]
+      }
     },
   },
   {
     name: 'two orgs equal diminishing utility',
-    orgIdToPointsEstimate: {
-      1: [
-        { usd_amount: 0, marginal_utility: 100, marginal_utility_estimate_id: 1 },
-        { usd_amount: 1000000, marginal_utility: 0, marginal_utility_estimate_id: 1 }
-      ],
-      2: [
-        { usd_amount: 0, marginal_utility: 100, marginal_utility_estimate_id: 2 },
-        { usd_amount: 1000000, marginal_utility: 0, marginal_utility_estimate_id: 2 }
-      ]
+    recommenderId_to_orgIdToPointsEstimate: {
+      "estimator1": {
+        1: [
+          { usd_amount: 0, marginal_utility: 100, marginal_utility_estimate_id: 1 },
+          { usd_amount: 1000000, marginal_utility: 0, marginal_utility_estimate_id: 1 }
+        ],
+        2: [
+          { usd_amount: 0, marginal_utility: 100, marginal_utility_estimate_id: 2 },
+          { usd_amount: 1000000, marginal_utility: 0, marginal_utility_estimate_id: 2 }
+        ]
+      }
     },
   },
   {
     name: 'org1 has higher utility but saturates at 500k',
-    orgIdToPointsEstimate: {
-      1: [
-        { usd_amount: 0, marginal_utility: 100, marginal_utility_estimate_id: 1 },
-        { usd_amount: 500000, marginal_utility: 0, marginal_utility_estimate_id: 1 }
-      ],
-      2: [
-        { usd_amount: 0, marginal_utility: 10, marginal_utility_estimate_id: 2 },
-        { usd_amount: 500000, marginal_utility: 0, marginal_utility_estimate_id: 2 }
-      ]
+    recommenderId_to_orgIdToPointsEstimate: {
+      "estimator1": {
+        1: [
+          { usd_amount: 0, marginal_utility: 100, marginal_utility_estimate_id: 1 },
+          { usd_amount: 500000, marginal_utility: 0, marginal_utility_estimate_id: 1 }
+        ],
+        2: [
+          { usd_amount: 0, marginal_utility: 10, marginal_utility_estimate_id: 2 },
+          { usd_amount: 500000, marginal_utility: 0, marginal_utility_estimate_id: 2 }
+        ]
+      }
     },
   },
 ];
@@ -54,12 +62,13 @@ describe('runAllocation', () => {
     fs.mkdirSync(goldenDir);
   }
 
-  test.each(testCases)('$name', ({ name, orgIdToPointsEstimate }) => {
-    const estimatorIdTo_OrgIdToPointsEstimate = {
-      "estimator1": orgIdToPointsEstimate
-    };
+  test.each(testCases)('$name', ({ name, recommenderId_to_orgIdToPointsEstimate }) => {
+    const estimatorIdTo_OrgIdToPointsEstimate = recommenderId_to_orgIdToPointsEstimate;
 
-    const orgs = Object.keys(orgIdToPointsEstimate).map(orgId => ({ id: Number(orgId), name: `Org ${orgId}` }));
+    const orgs = Object.keys(recommenderId_to_orgIdToPointsEstimate["estimator1"]).map(orgId => ({ 
+      id: Number(orgId), 
+      name: `Org ${orgId}` 
+    }));
 
     const result = runAllocation({
       orgs,
@@ -144,7 +153,7 @@ describe('getUtilityAtAmount', () => {
 
   test('throws error for invalid inputs', () => {
     expect(() => getUtilityAtAmount([], 100)).toThrow();
-    expect(() => getUtilityAtAmount(null as any, 100)).toThrow();
-    expect(() => getUtilityAtAmount(threePoints, null as any)).toThrow();
+    expect(() => getUtilityAtAmount(null as UtilityGraphPoint[], 100)).toThrow();
+    expect(() => getUtilityAtAmount(threePoints, null as number)).toThrow();
   });
 }); 
