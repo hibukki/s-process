@@ -208,8 +208,8 @@ const MarginalUtilityEditor = () => {
         <div key={point.id}>
           <p>
             Point {point.id}: 
-            usd=${Math.round(((point.x - padding) / (width - padding)) * maxDollars).toLocaleString()}, 
-            utilons={Math.round(((height - point.y - padding) / (height - padding)) * maxUtilons)}
+            usd=${Math.round(((point.x - padding) / (width - (padding * 2))) * maxDollars).toLocaleString()}, 
+            utilons={Math.round(((height - point.y - padding) / (height - (padding * 2))) * maxUtilons)}
           </p>
         </div>
       ))}
