@@ -45,6 +45,12 @@ export default function FundableOrgDetails() {
           .single()
 
         if (estimateError) {
+          // Handle "no rows returned" as a non-error case
+          if (estimateError.code === 'PGRST116') {
+            setEstimateId(null)
+            setPoints([])
+            return
+          }
           throw estimateError
         }
 
@@ -72,7 +78,7 @@ export default function FundableOrgDetails() {
           table: 'utility_graph_points',
           filter: `marginal_utility_estimate_id=eq.${estimateId}`,
         },
-        async (payload) => {
+        async () => {
           // Refetch all points when any change occurs
           if (!estimateId) return
           
