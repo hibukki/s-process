@@ -7,32 +7,69 @@ import MarginalUtilityEditor from './MarginalUtilityEditor'
 export default function FundableOrgDetails() {
   const { orgId } = useParams()
   const [org, setOrg] = useState<Tables<'fundable_orgs'> | null>(null)
+  const [estimateId, setEstimateId] = useState<number | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    async function fetchOrg() {
+    async function fetchData() {
       try {
-        const { data, error } = await supabase
+        // Fetch org details
+        const { data: orgData, error: orgError } = await supabase
           .from('fundable_orgs')
           .select('*')
           .eq('id', orgId)
           .single()
 
-        if (error) {
-          throw error
+        if (orgError) throw orgError
+        setOrg(orgData)
+
+        // Fetch estimate for current user and org
+        const { data: user } = await supabase.auth.getUser()
+        if (!user.user) throw new Error('Not authenticated')
+
+        const { data: estimateData, error: estimateError } = await supabase
+          .from('marginal_utility_estimates')
+          .select('id')
+          .eq('org_id', orgId)
+          .eq('estimator_id', user.user.id)
+          .single()
+
+        if (estimateError) {
+          throw estimateError
         }
 
-        setOrg(data)
+        setEstimateId(estimateData?.id ?? null)
       } catch (e) {
-        setError(e instanceof Error ? e.message : 'An error occurred while fetching the organization')
+        setError(e instanceof Error ? e.message : 'An error occurred')
       } finally {
         setIsLoading(false)
       }
     }
 
-    fetchOrg()
+    fetchData()
   }, [orgId])
+
+  const handleCreateEstimate = async () => {
+    try {
+      const { data: user } = await supabase.auth.getUser()
+      if (!user.user) throw new Error('Not authenticated')
+
+      const { data, error } = await supabase
+        .from('marginal_utility_estimates')
+        .insert({
+          org_id: Number(orgId),
+          estimator_id: user.user.id,
+        })
+        .select('id')
+        .single()
+
+      if (error) throw error
+      setEstimateId(data.id)
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Failed to create estimate')
+    }
+  }
 
   if (isLoading) {
     return <div>Loading organization details...</div>
@@ -56,8 +93,16 @@ export default function FundableOrgDetails() {
         <p className="text-gray-600">
           Added: {new Date(org.created_at!).toLocaleDateString()}
         </p>
-        {/* Add more organization details here as needed */}
-        <MarginalUtilityEditor />
+        {estimateId ? (
+          <MarginalUtilityEditor estimateId={estimateId} />
+        ) : (
+          <button
+            onClick={handleCreateEstimate}
+            className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+          >
+            Create New Estimate
+          </button>
+        )}
       </div>
     </div>
   )

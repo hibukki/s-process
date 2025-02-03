@@ -6,7 +6,7 @@ interface Point {
   y: number;
 }
 
-const MarginalUtilityEditor = () => {
+const MarginalUtilityEditor = ({ estimateId }: { estimateId: number }) => {
   // SVG viewport constants
   const width = 400;
   const height = 400;
