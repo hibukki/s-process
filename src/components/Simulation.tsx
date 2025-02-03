@@ -16,6 +16,7 @@ export default function Simulation() {
     null
   );
   const [orgs, setOrgs] = useState<Org[]>([]);
+  const [log, setLog] = useState<string[]>([]);
 
   useEffect(() => {
     async function runSimulation() {
@@ -82,6 +83,7 @@ export default function Simulation() {
 
       setOrgs(fetchedOrgs);
       setAllocations(result.allocations);
+      setLog(result.log);
     }
     runSimulation();
   }, [dollarsToAllocate]);
@@ -99,6 +101,19 @@ export default function Simulation() {
               </li>
             ))}
           </ul>
+          <h2>Allocation Log:</h2>
+          <div
+            style={{
+              maxHeight: "400px",
+              overflowY: "auto",
+              border: "1px solid #ccc",
+              padding: "10px",
+            }}
+          >
+            {log.map((entry, index) => (
+              <div key={index}>{entry}</div>
+            ))}
+          </div>
         </div>
       ) : (
         <p>Running simulation...</p>
