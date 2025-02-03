@@ -131,7 +131,7 @@ const MarginalUtilityEditor = ({ estimateId }: { estimateId: number }) => {
           textAnchor="middle"
           className="text-sm"
         >
-          k dollars
+          Dollars
         </text>
         <text
           x={padding}
@@ -158,7 +158,7 @@ const MarginalUtilityEditor = ({ estimateId }: { estimateId: number }) => {
           transform={`rotate(-90, ${textPadding}, ${height / 2})`}
           className="text-sm"
         >
-          utilons
+          Utilons
         </text>
         <text
           x={padding - textPadding}
