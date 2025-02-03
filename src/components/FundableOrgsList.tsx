@@ -2,9 +2,15 @@ import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabase";
 import type { Tables } from "../../database.types";
 import { Link } from "react-router-dom";
+import MarginalUtilityEditor from "./MarginalUtilityEditor";
+import type { UsdUtilonPoint } from "./MarginalUtilityEditor";
+
+interface OrgWithEstimate extends Tables<"fundable_orgs"> {
+  utilityPoints?: UsdUtilonPoint[];
+}
 
 export default function FundableOrgsList() {
-  const [orgs, setOrgs] = useState<Tables<"fundable_orgs">[]>([]);
+  const [orgs, setOrgs] = useState<OrgWithEstimate[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [newOrgName, setNewOrgName] = useState("");
@@ -13,6 +19,9 @@ export default function FundableOrgsList() {
   useEffect(() => {
     async function fetchOrgs() {
       try {
+        const { data: user } = await supabase.auth.getUser();
+        if (!user.user) throw new Error("Not authenticated");
+
         const { data, error } = await supabase
           .from("fundable_orgs")
           .select("*")
@@ -22,7 +31,33 @@ export default function FundableOrgsList() {
           throw error;
         }
 
-        setOrgs(data);
+        // Fetch utility points for each org
+        const orgsWithEstimates = await Promise.all(
+          data.map(async (org) => {
+            const { data: estimateData } = await supabase
+              .from("marginal_utility_estimates")
+              .select(
+                `
+                id,
+                utility_graph_points (
+                  id,
+                  usd_amount,
+                  marginal_utility
+                )
+              `
+              )
+              .eq("org_id", org.id)
+              .eq("estimator_id", user.user!.id)
+              .single();
+
+            return {
+              ...org,
+              utilityPoints: estimateData?.utility_graph_points || [],
+            };
+          })
+        );
+
+        setOrgs(orgsWithEstimates);
       } catch (e) {
         setError(
           e instanceof Error
@@ -90,9 +125,17 @@ export default function FundableOrgsList() {
             <li key={org.id}>
               <Link
                 to={`/fundableorgs/${org.id}`}
-                className="block p-3 border rounded hover:bg-gray-50"
+                className="block p-3 border rounded hover:bg-gray-50 flex items-center"
               >
-                <p className="font-medium">{org.name}</p>
+                <div className="flex-grow">
+                  <p className="font-medium">{org.name}</p>
+                </div>
+                <div className="ml-4">
+                  <MarginalUtilityEditor
+                    initialPoints={org.utilityPoints || []}
+                    mini={true}
+                  />
+                </div>
               </Link>
             </li>
           ))}
