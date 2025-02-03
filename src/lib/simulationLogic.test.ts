@@ -1,4 +1,4 @@
-import { runAllocation, Organization, UtilityGraphPoint, getUtilityAtAmount } from './simulationLogic';
+import { runAllocation, UtilityGraphPoint, getUtilityAtAmount } from './simulationLogic';
 import * as fs from 'fs';
 import * as path from 'path';
 
@@ -14,8 +14,8 @@ const testCases: TestCase[] = [
     name: 'one org diminishing utility',
     orgIdToPointsEstimate: {
       1: [
-        { usd_amount: 0, utilons: 100, marginal_utility_estimate_id: 1 },
-        { usd_amount: 1000000, utilons: 0, marginal_utility_estimate_id: 1 }
+        { usd_amount: 0, marginal_utility: 100, marginal_utility_estimate_id: 1 },
+        { usd_amount: 1000000, marginal_utility: 0, marginal_utility_estimate_id: 1 }
       ]
     },
   },
@@ -23,12 +23,12 @@ const testCases: TestCase[] = [
     name: 'two orgs equal diminishing utility',
     orgIdToPointsEstimate: {
       1: [
-        { usd_amount: 0, utilons: 100, marginal_utility_estimate_id: 1 },
-        { usd_amount: 1000000, utilons: 0, marginal_utility_estimate_id: 1 }
+        { usd_amount: 0, marginal_utility: 100, marginal_utility_estimate_id: 1 },
+        { usd_amount: 1000000, marginal_utility: 0, marginal_utility_estimate_id: 1 }
       ],
       2: [
-        { usd_amount: 0, utilons: 100, marginal_utility_estimate_id: 2 },
-        { usd_amount: 1000000, utilons: 0, marginal_utility_estimate_id: 2 }
+        { usd_amount: 0, marginal_utility: 100, marginal_utility_estimate_id: 2 },
+        { usd_amount: 1000000, marginal_utility: 0, marginal_utility_estimate_id: 2 }
       ]
     },
   },
@@ -36,12 +36,12 @@ const testCases: TestCase[] = [
     name: 'org1 has higher utility but saturates at 500k',
     orgIdToPointsEstimate: {
       1: [
-        { usd_amount: 0, utilons: 100, marginal_utility_estimate_id: 1 },
-        { usd_amount: 500000, utilons: 0, marginal_utility_estimate_id: 1 }
+        { usd_amount: 0, marginal_utility: 100, marginal_utility_estimate_id: 1 },
+        { usd_amount: 500000, marginal_utility: 0, marginal_utility_estimate_id: 1 }
       ],
       2: [
-        { usd_amount: 0, utilons: 10, marginal_utility_estimate_id: 2 },
-        { usd_amount: 500000, utilons: 0, marginal_utility_estimate_id: 2 }
+        { usd_amount: 0, marginal_utility: 10, marginal_utility_estimate_id: 2 },
+        { usd_amount: 500000, marginal_utility: 0, marginal_utility_estimate_id: 2 }
       ]
     },
   },
@@ -112,9 +112,9 @@ describe('runAllocation', () => {
 
 describe('getUtilityAtAmount', () => {
   const threePoints: UtilityGraphPoint[] = [
-    { usd_amount: 0, utilons: 100, marginal_utility_estimate_id: 1 },
-    { usd_amount: 500_000, utilons: 50, marginal_utility_estimate_id: 1 },
-    { usd_amount: 1_000_000, utilons: 20, marginal_utility_estimate_id: 1 }
+    { usd_amount: 0, marginal_utility: 100, marginal_utility_estimate_id: 1 },
+    { usd_amount: 500_000, marginal_utility: 50, marginal_utility_estimate_id: 1 },
+    { usd_amount: 1_000_000, marginal_utility: 20, marginal_utility_estimate_id: 1 }
   ];
 
   test('calculates utility correctly with 3 points', () => {

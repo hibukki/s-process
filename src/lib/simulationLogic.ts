@@ -1,6 +1,6 @@
 export type UtilityGraphPoint = {
   usd_amount: number;
-  utilons: number;
+  marginal_utility: number;
   marginal_utility_estimate_id: number;
 };
 
@@ -58,7 +58,7 @@ export function getUtilityAtAmount(
 
   if (sortedPoints.length === 0) return 0;
   const point = sortedPoints.find((p) => p.usd_amount === usd_amount);
-  if (point) return point.utilons;
+  if (point) return point.marginal_utility;
 
   for (let i = 0; i < sortedPoints.length - 1; i++) {
     const p1 = sortedPoints[i];
@@ -66,10 +66,10 @@ export function getUtilityAtAmount(
     if (usd_amount >= p1.usd_amount && usd_amount <= p2.usd_amount) {
       const ratio =
         (usd_amount - p1.usd_amount) / (p2.usd_amount - p1.usd_amount);
-      return p1.utilons + ratio * (p2.utilons - p1.utilons);
+      return p1.marginal_utility + ratio * (p2.marginal_utility - p1.marginal_utility);
     }
   }
-  return sortedPoints[sortedPoints.length - 1].utilons;
+  return sortedPoints[sortedPoints.length - 1].marginal_utility;
 }
 
 export function runAllocation(params: {

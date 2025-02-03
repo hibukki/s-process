@@ -38,7 +38,7 @@ export default function FundableOrgDetails() {
             utility_graph_points (
               id,
               usd_amount,
-              utilons
+              marginal_utility
             )
           `
           )
@@ -86,7 +86,7 @@ export default function FundableOrgDetails() {
 
           const { data, error } = await supabase
             .from("utility_graph_points")
-            .select("id, usd_amount, utilons")
+            .select("id, usd_amount, marginal_utility")
             .eq("marginal_utility_estimate_id", estimateId);
 
           if (!error && data) {
@@ -141,7 +141,7 @@ export default function FundableOrgDetails() {
           newPoints.map((point) => ({
             marginal_utility_estimate_id: estimateId,
             usd_amount: point.usd_amount,
-            utilons: point.utilons,
+            marginal_utility: point.marginal_utility,
           }))
         );
 

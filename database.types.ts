@@ -60,23 +60,23 @@ export type Database = {
         Row: {
           created_at: string | null
           id: number
+          marginal_utility: number
           marginal_utility_estimate_id: number
           usd_amount: number
-          utilons: number
         }
         Insert: {
           created_at?: string | null
           id?: never
+          marginal_utility: number
           marginal_utility_estimate_id: number
           usd_amount: number
-          utilons: number
         }
         Update: {
           created_at?: string | null
           id?: never
+          marginal_utility?: number
           marginal_utility_estimate_id?: number
           usd_amount?: number
-          utilons?: number
         }
         Relationships: [
           {
