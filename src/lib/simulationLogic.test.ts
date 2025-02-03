@@ -56,6 +56,31 @@ const testCases: TestCaseInput[] = [
       }
     },
   },
+  {
+    name: 'estimator1 likes org1, estimator2 likes org2',
+    recommenderId_to_orgIdToPointsEstimate: {
+      "estimator1": {
+        1: [
+          { usd_amount: 0, marginal_utility: 100 },
+          { usd_amount: 1_000_000, marginal_utility: 0 }
+        ],
+        2: [
+          { usd_amount: 0, marginal_utility: 10 },
+          { usd_amount: 1_000_000, marginal_utility: 0 }
+        ]
+      },
+      "estimator2": {
+        1: [
+          { usd_amount: 0, marginal_utility: 10 },
+          { usd_amount: 1_000_000, marginal_utility: 0 }
+        ],
+        2: [
+          { usd_amount: 0, marginal_utility: 100 },
+          { usd_amount: 1_000_000, marginal_utility: 0 }
+        ]
+      }
+    },
+  }
 ];
 
 describe('runAllocation', () => {
