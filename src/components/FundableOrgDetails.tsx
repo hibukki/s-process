@@ -3,6 +3,7 @@ import { useParams, Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import type { Tables } from '../../database.types'
 import MarginalUtilityEditor from './MarginalUtilityEditor'
+import type { UsdUtilonPoint } from './MarginalUtilityEditor'
 
 export default function FundableOrgDetails() {
   const { orgId } = useParams()
@@ -10,6 +11,7 @@ export default function FundableOrgDetails() {
   const [estimateId, setEstimateId] = useState<number | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [points, setPoints] = useState<UsdUtilonPoint[]>([])
 
   useEffect(() => {
     async function fetchData() {
@@ -24,13 +26,20 @@ export default function FundableOrgDetails() {
         if (orgError) throw orgError
         setOrg(orgData)
 
-        // Fetch estimate for current user and org
+        // Fetch estimate and its points for current user and org
         const { data: user } = await supabase.auth.getUser()
         if (!user.user) throw new Error('Not authenticated')
 
         const { data: estimateData, error: estimateError } = await supabase
           .from('marginal_utility_estimates')
-          .select('id')
+          .select(`
+            id,
+            utility_graph_points (
+              id,
+              usd_amount,
+              utilons
+            )
+          `)
           .eq('org_id', orgId)
           .eq('estimator_id', user.user.id)
           .single()
@@ -40,6 +49,9 @@ export default function FundableOrgDetails() {
         }
 
         setEstimateId(estimateData?.id ?? null)
+        if (estimateData?.utility_graph_points) {
+          setPoints(estimateData.utility_graph_points)
+        }
       } catch (e) {
         setError(e instanceof Error ? e.message : 'An error occurred')
       } finally {
@@ -48,7 +60,39 @@ export default function FundableOrgDetails() {
     }
 
     fetchData()
-  }, [orgId])
+
+    // Set up real-time subscription for points
+    const channel = supabase
+      .channel('utility_graph_points_changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'utility_graph_points',
+          filter: `marginal_utility_estimate_id=eq.${estimateId}`,
+        },
+        async (payload) => {
+          // Refetch all points when any change occurs
+          if (!estimateId) return
+          
+          const { data, error } = await supabase
+            .from('utility_graph_points')
+            .select('id, usd_amount, utilons')
+            .eq('marginal_utility_estimate_id', estimateId)
+          
+          if (!error && data) {
+            setPoints(data)
+          }
+        }
+      )
+      .subscribe()
+
+    // Cleanup subscription on unmount
+    return () => {
+      supabase.removeChannel(channel)
+    }
+  }, [orgId, estimateId])
 
   const handleCreateEstimate = async () => {
     try {
@@ -68,6 +112,35 @@ export default function FundableOrgDetails() {
       setEstimateId(data.id)
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Failed to create estimate')
+    }
+  }
+
+  const handleSavePoints = async (newPoints: UsdUtilonPoint[]) => {
+    if (!estimateId) return
+
+    try {
+      // Start a transaction using RPC if available, or just sequential operations
+      const { error: deleteError } = await supabase
+        .from('utility_graph_points')
+        .delete()
+        .eq('marginal_utility_estimate_id', estimateId)
+
+      if (deleteError) throw deleteError
+
+      const { error: insertError } = await supabase
+        .from('utility_graph_points')
+        .insert(
+          newPoints.map(point => ({
+            marginal_utility_estimate_id: estimateId,
+            usd_amount: point.usd_amount,
+            utilons: point.utilons
+          }))
+        )
+
+      if (insertError) throw insertError
+      // No need to setPoints here as the subscription will handle it
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Failed to save points')
     }
   }
 
@@ -94,7 +167,10 @@ export default function FundableOrgDetails() {
           Added: {new Date(org.created_at!).toLocaleDateString()}
         </p>
         {estimateId ? (
-          <MarginalUtilityEditor estimateId={estimateId} />
+          <MarginalUtilityEditor 
+            initialPoints={points}
+            onSave={handleSavePoints}
+          />
         ) : (
           <button
             onClick={handleCreateEstimate}
